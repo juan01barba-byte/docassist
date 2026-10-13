@@ -1,0 +1,16 @@
+{
+  "name": "DocAssist Clínica",
+  "short_name": "DocAssist",
+  "description": "Asistente clínico de guardia y censo de pacientes",
+  "start_url": "./index.html",
+  "display": "standalone",
+  "background_color": "#0f172a",
+  "theme_color": "#4338ca",
+  "icons": [
+    {
+      "src": "https://cdn-icons-png.flaticon.com/512/2966/2966327.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
+}
