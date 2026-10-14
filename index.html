@@ -10,7 +10,7 @@
 
   <!-- Tailwind CSS -->
   <script src="https://cdn.tailwindcss.com"></script>
-  <!-- Supabase JS Client -->
+  <!-- Supabase JS Client oficial -->
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <!-- Lucide Icons -->
   <script src="https://unpkg.com/lucide@latest"></script>
@@ -24,7 +24,7 @@
         <i data-lucide="stethoscope" class="w-6 h-6"></i>
         <h1 class="text-lg font-bold tracking-tight">DocAssist <span class="text-xs bg-indigo-500/80 px-2 py-0.5 rounded-full font-normal">Guardia</span></h1>
       </div>
-      <button onclick="openConfigModal()" class="flex items-center gap-1.5 text-xs bg-indigo-800/80 hover:bg-indigo-900 border border-indigo-500 px-3 py-1.5 rounded-lg transition">
+      <button type="button" onclick="openConfigModal()" class="flex items-center gap-1.5 text-xs bg-indigo-800/90 hover:bg-indigo-900 border border-indigo-400 px-3 py-1.5 rounded-lg transition shadow-sm font-semibold active:scale-95">
         <i data-lucide="key" class="w-3.5 h-3.5"></i>
         <span>Ajustes / Keys</span>
       </button>
@@ -43,7 +43,7 @@
           </h2>
           <span id="patientCounter" class="text-xs text-slate-500">Cargando censo...</span>
         </div>
-        <button onclick="openPatientModal()" class="bg-indigo-600 hover:bg-indigo-700 text-white p-1.5 rounded-lg text-xs shadow-sm flex items-center gap-1">
+        <button type="button" onclick="openPatientModal()" class="bg-indigo-600 hover:bg-indigo-700 text-white p-1.5 rounded-lg text-xs shadow-sm flex items-center gap-1">
           <i data-lucide="user-plus" class="w-4 h-4"></i>
         </button>
       </div>
@@ -68,123 +68,4 @@
 
       <!-- Selector de Tipo de Nota -->
       <div class="grid grid-cols-3 bg-slate-200/80 p-1 rounded-xl text-xs sm:text-sm font-semibold">
-        <button onclick="switchNoteTab('evolucion')" id="tab-evolucion" class="py-2 rounded-lg bg-white shadow-sm text-indigo-700 transition">Evolución (SOAP)</button>
-        <button onclick="switchNoteTab('ingreso')" id="tab-ingreso" class="py-2 rounded-lg text-slate-600 hover:text-slate-900 transition">Nota de Ingreso</button>
-        <button onclick="switchNoteTab('egreso')" id="tab-egreso" class="py-2 rounded-lg text-slate-600 hover:text-slate-900 transition">Epicrisis / Egreso</button>
-      </div>
-
-      <!-- Borrador / Dictado -->
-      <div class="bg-white rounded-xl shadow-sm border border-slate-200 p-4 space-y-3">
-        <div class="flex items-center justify-between">
-          <label class="text-xs font-bold text-slate-600 uppercase tracking-wider flex items-center gap-1.5">
-            <i data-lucide="pencil-line" class="w-4 h-4 text-indigo-600"></i> Borrador / Dictado Rápido
-          </label>
-          <button id="dictationButton" onclick="toggleDictation()" class="flex items-center gap-1 text-xs bg-slate-100 hover:bg-slate-200 text-slate-700 px-2.5 py-1 rounded-md border border-slate-300 transition">
-            <i data-lucide="mic" class="w-3.5 h-3.5 text-rose-600"></i>
-            <span id="dictationLabel">Dictar por voz</span>
-          </button>
-        </div>
-
-        <textarea id="rawNotesInput" rows="4" placeholder="Ej: Pasó la noche tranquilo, tolerando VO, sin dolor torácico. TA 120/80, FC 74, Sat 97%. Pulmones limpios, ruidos cardíacos rítmicos. Laboratorios: Hb 13.2, leuco normal, creat 0.8. Continuar manejo oral y evaluar alta..." class="w-full text-xs sm:text-sm p-3 rounded-lg border border-slate-200 focus:outline-none focus:ring-2 focus:ring-indigo-500 bg-slate-50/50 resize-y leading-relaxed"></textarea>
-
-        <div class="flex justify-end">
-          <button id="processAiBtn" onclick="processWithGemini()" class="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-lg font-medium text-xs sm:text-sm flex items-center gap-2 shadow-sm transition">
-            <i data-lucide="sparkles" class="w-4 h-4"></i>
-            <span>Estructurar con IA</span>
-          </button>
-        </div>
-      </div>
-
-      <!-- Salida Estructurada -->
-      <div class="bg-white rounded-xl shadow-sm border border-slate-200 p-4 space-y-3 flex-1 flex flex-col">
-        <div class="flex items-center justify-between border-b pb-2">
-          <label class="text-xs font-bold text-slate-600 uppercase tracking-wider flex items-center gap-1.5">
-            <i data-lucide="file-check" class="w-4 h-4 text-emerald-600"></i> Nota Clínica Terminada
-          </label>
-          <div class="flex gap-2">
-            <button onclick="copyToClipboard()" class="text-xs bg-emerald-50 hover:bg-emerald-100 text-emerald-700 border border-emerald-300 px-3 py-1.5 rounded-lg font-semibold flex items-center gap-1">
-              <i data-lucide="copy" class="w-3.5 h-3.5"></i> Copiar
-            </button>
-            <button onclick="saveNoteToDatabase()" class="text-xs bg-indigo-50 hover:bg-indigo-100 text-indigo-700 border border-indigo-300 px-3 py-1.5 rounded-lg font-semibold flex items-center gap-1">
-              <i data-lucide="save" class="w-3.5 h-3.5"></i> Guardar en Supabase
-            </button>
-          </div>
-        </div>
-
-        <textarea id="finalClinicalNote" rows="9" placeholder="La nota estructurada formal aparecerá aquí..." class="w-full font-mono text-xs sm:text-sm p-3 rounded-lg border border-slate-200 focus:outline-none bg-slate-50/50 resize-y text-slate-800 leading-relaxed flex-1"></textarea>
-      </div>
-
-    </section>
-  </main>
-
-  <!-- Modal Configuración -->
-  <div id="configModal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
-    <div class="bg-white w-full max-w-md rounded-2xl p-5 shadow-2xl border border-slate-200 space-y-4">
-      <div class="flex items-center justify-between border-b pb-2">
-        <h3 class="font-bold text-sm text-slate-800 flex items-center gap-2">
-          <i data-lucide="sliders" class="w-4 h-4 text-indigo-600"></i> Conexión con Supabase y Gemini
-        </h3>
-        <button onclick="closeConfigModal()" class="text-slate-400 hover:text-slate-600"><i data-lucide="x" class="w-4 h-4"></i></button>
-      </div>
-      <div class="space-y-3 text-xs">
-        <div>
-          <label class="block font-semibold text-slate-700 mb-1">Supabase Project URL</label>
-          <input type="text" id="cfgSupabaseUrl" placeholder="https://xyz.supabase.co" class="w-full border rounded-lg p-2">
-        </div>
-        <div>
-          <label class="block font-semibold text-slate-700 mb-1">Supabase Anon Key</label>
-          <input type="password" id="cfgSupabaseKey" placeholder="eyJhbGciOi..." class="w-full border rounded-lg p-2">
-        </div>
-        <div>
-          <label class="block font-semibold text-slate-700 mb-1">Google Gemini API Key</label>
-          <input type="password" id="cfgGeminiKey" placeholder="AIzaSy..." class="w-full border rounded-lg p-2">
-        </div>
-      </div>
-      <div class="flex justify-end gap-2 pt-2">
-        <button onclick="closeConfigModal()" class="px-3 py-1.5 text-xs text-slate-600 hover:bg-slate-100 rounded-lg">Cerrar</button>
-        <button onclick="saveConfiguration()" class="px-4 py-1.5 text-xs font-semibold bg-indigo-600 text-white rounded-lg hover:bg-indigo-700">Guardar</button>
-      </div>
-    </div>
-  </div>
-
-  <!-- Modal Nuevo Paciente -->
-  <div id="patientModal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
-    <div class="bg-white w-full max-w-md rounded-2xl p-5 shadow-2xl border border-slate-200 space-y-4">
-      <div class="flex items-center justify-between border-b pb-2">
-        <h3 class="font-bold text-sm text-slate-800 flex items-center gap-2">
-          <i data-lucide="user-plus" class="w-4 h-4 text-indigo-600"></i> Asignar Cama a Paciente
-        </h3>
-        <button onclick="closePatientModal()" class="text-slate-400 hover:text-slate-600"><i data-lucide="x" class="w-4 h-4"></i></button>
-      </div>
-      <div class="grid grid-cols-2 gap-3 text-xs">
-        <div>
-          <label class="block font-semibold text-slate-700 mb-1">Cama / Habitación</label>
-          <input type="text" id="newBed" placeholder="Cama 204" class="w-full border rounded-lg p-2">
-        </div>
-        <div>
-          <label class="block font-semibold text-slate-700 mb-1">Iniciales</label>
-          <input type="text" id="newInitials" placeholder="J.P.M." class="w-full border rounded-lg p-2">
-        </div>
-        <div>
-          <label class="block font-semibold text-slate-700 mb-1">Edad</label>
-          <input type="number" id="newAge" placeholder="58" class="w-full border rounded-lg p-2">
-        </div>
-        <div>
-          <label class="block font-semibold text-slate-700 mb-1">Servicio</label>
-          <input type="text" id="newService" value="Medicina Interna" class="w-full border rounded-lg p-2">
-        </div>
-        <div class="col-span-2">
-          <label class="block font-semibold text-slate-700 mb-1">Diagnóstico Principal de Ingreso</label>
-          <input type="text" id="newDx" placeholder="Neumonía Adquirida en la Comunidad" class="w-full border rounded-lg p-2">
-        </div>
-      </div>
-      <div class="flex justify-end gap-2 pt-2">
-        <button onclick="closePatientModal()" class="px-3 py-1.5 text-xs text-slate-600 hover:bg-slate-100 rounded-lg">Cancelar</button>
-        <button onclick="submitNewPatient()" class="px-4 py-1.5 text-xs font-semibold bg-indigo-600 text-white rounded-lg hover:bg-indigo-700">Agregar al Censo</button>
-      </div>
-    </div>
-  </div>
-
-  <script src="app.js"></script>
-</body>
-</html>
+        <button type="button" onclick="switchNoteTab('evolucion')" id="tab-evolucion" class="py-2
