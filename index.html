@@ -15,33 +15,37 @@
       <span class="text-2xl">🩺</span>
       <h1 class="text-lg font-bold">DocAssist <span class="text-xs bg-indigo-500 px-2 py-0.5 rounded-full font-normal">Guardia</span></h1>
     </div>
-    <button type="button" onclick="toggleConfig()" class="bg-amber-400 hover:bg-amber-300 text-indigo-950 font-bold px-3 py-1.5 rounded-lg text-xs shadow transition active:scale-95">
-      ⚙️ Ajustes / Keys
+    <button type="button" onclick="document.getElementById('configPanel').classList.toggle('hidden')" class="bg-amber-400 hover:bg-amber-300 text-indigo-950 font-bold px-3 py-1.5 rounded-lg text-xs shadow">
+      ⚙️ Mostrar / Ocultar Keys
     </button>
   </header>
 
-  <!-- PANEL DE AJUSTES (Desplegable directo, imposible que falle) -->
-  <div id="configPanel" class="hidden bg-white border-b-2 border-indigo-200 p-4 shadow-md">
-    <div class="max-w-2xl mx-auto space-y-3">
+  <!-- PANEL DE LLAVES: ABIERTO POR DEFECTO PARA QUE LO VEAS DE INMEDIATO -->
+  <div id="configPanel" class="bg-amber-50 border-b-2 border-amber-300 p-4 shadow-sm">
+    <div class="max-w-3xl mx-auto space-y-3">
       <div class="flex justify-between items-center">
-        <h2 class="font-bold text-sm text-slate-700">⚙️ Configuración de Conexiones</h2>
-        <button type="button" onclick="toggleConfig()" class="text-slate-400 font-bold text-sm">✕ Cerrar</button>
+        <h2 class="font-bold text-sm text-amber-900 flex items-center gap-1.5">
+          🔑 Configuración de Llaves (Pega tus datos aquí)
+        </h2>
+        <span class="text-[11px] text-amber-700">Se guarda en tu navegador</span>
       </div>
-      <div>
-        <label class="block text-xs font-semibold text-slate-600 mb-1">1. Supabase Project URL</label>
-        <input type="text" id="cfgSupabaseUrl" placeholder="https://xyz.supabase.co" class="w-full border p-2 rounded text-xs">
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
+        <div>
+          <label class="block text-xs font-bold text-slate-700 mb-1">1. Supabase Project URL</label>
+          <input type="text" id="cfgSupabaseUrl" placeholder="https://xyz.supabase.co" class="w-full border border-slate-300 p-2 rounded text-xs bg-white">
+        </div>
+        <div>
+          <label class="block text-xs font-bold text-slate-700 mb-1">2. Supabase Anon Key</label>
+          <input type="password" id="cfgSupabaseKey" placeholder="eyJhbGciOi..." class="w-full border border-slate-300 p-2 rounded text-xs bg-white">
+        </div>
+        <div>
+          <label class="block text-xs font-bold text-slate-700 mb-1">3. Gemini API Key</label>
+          <input type="password" id="cfgGeminiKey" placeholder="AIzaSy..." class="w-full border border-slate-300 p-2 rounded text-xs bg-white">
+        </div>
       </div>
-      <div>
-        <label class="block text-xs font-semibold text-slate-600 mb-1">2. Supabase Anon Key</label>
-        <input type="password" id="cfgSupabaseKey" placeholder="eyJhbGciOi..." class="w-full border p-2 rounded text-xs">
-      </div>
-      <div>
-        <label class="block text-xs font-semibold text-slate-600 mb-1">3. Google Gemini API Key</label>
-        <input type="password" id="cfgGeminiKey" placeholder="AIzaSy..." class="w-full border p-2 rounded text-xs">
-      </div>
-      <div class="flex justify-end pt-2">
+      <div class="flex justify-end gap-2 pt-1">
         <button type="button" onclick="saveConfiguration()" class="bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs px-4 py-2 rounded-lg shadow">
-          💾 Guardar Conexión
+          💾 Guardar y Conectar
         </button>
       </div>
     </div>
@@ -57,26 +61,26 @@
           <h2 class="font-bold text-sm text-slate-700">🛏️ Censo de Camas</h2>
           <span id="patientCounter" class="text-xs text-slate-400">Sin conectar</span>
         </div>
-        <button type="button" onclick="toggleNewPatient()" class="bg-indigo-600 text-white font-bold px-2.5 py-1.5 rounded-lg text-xs shadow hover:bg-indigo-700">
+        <button type="button" onclick="document.getElementById('newPatientBox').classList.toggle('hidden')" class="bg-indigo-600 text-white font-bold px-2.5 py-1.5 rounded-lg text-xs shadow hover:bg-indigo-700">
           + Agregar Cama
         </button>
       </div>
 
-      <!-- Formulario para agregar paciente (Desplegable) -->
+      <!-- Formulario para agregar paciente -->
       <div id="newPatientBox" class="hidden bg-slate-50 p-3 rounded-lg border border-slate-200 mb-3 space-y-2 text-xs">
         <input type="text" id="newBed" placeholder="Cama (Ej: 204-A)" class="w-full border p-1.5 rounded bg-white">
         <input type="text" id="newInitials" placeholder="Iniciales (Ej: J.P.M.)" class="w-full border p-1.5 rounded bg-white">
         <input type="number" id="newAge" placeholder="Edad" class="w-full border p-1.5 rounded bg-white">
         <input type="text" id="newDx" placeholder="Diagnóstico de Ingreso" class="w-full border p-1.5 rounded bg-white">
         <div class="flex justify-end gap-2 pt-1">
-          <button type="button" onclick="toggleNewPatient()" class="text-slate-500 px-2 py-1">Cancelar</button>
-          <button type="button" onclick="submitNewPatient()" class="bg-indigo-600 text-white px-3 py-1 rounded font-bold">Guardar</button>
+          <button type="button" onclick="document.getElementById('newPatientBox').classList.add('hidden')" class="text-slate-500 px-2 py-1">Cancelar</button>
+          <button type="button" onclick="submitNewPatient()" class="bg-indigo-600 text-white px-3 py-1 rounded font-bold">Guardar Cama</button>
         </div>
       </div>
 
       <!-- Lista de camas -->
       <div id="patientListContainer" class="space-y-2 overflow-y-auto max-h-[60vh]">
-        <p class="text-center text-xs text-slate-400 py-6">Configura tus claves en "Ajustes / Keys" arriba para ver pacientes.</p>
+        <p class="text-center text-xs text-slate-400 py-6">Pega tus claves arriba y pulsa "Guardar y Conectar".</p>
       </div>
     </aside>
 
@@ -125,7 +129,7 @@
               📋 Copiar
             </button>
             <button type="button" onclick="saveNoteToDatabase()" class="text-xs bg-indigo-50 text-indigo-700 border border-indigo-300 px-3 py-1.5 rounded-lg font-bold">
-              💾 Guardar
+              💾 Guardar en Supabase
             </button>
           </div>
         </div>
@@ -136,13 +140,9 @@
   </main>
 
   <script>
-    // 1. Matar cualquier Service Worker viejo que esté bloqueando el celular
+    // Desactivar service workers viejos
     if ('serviceWorker' in navigator) {
-      navigator.serviceWorker.getRegistrations().then(registrations => {
-        for (let registration of registrations) {
-          registration.unregister();
-        }
-      });
+      navigator.serviceWorker.getRegistrations().then(r => r.forEach(reg => reg.unregister()));
     }
 
     let supabase = null;
@@ -150,16 +150,6 @@
     let currentTab = 'evolucion';
     let speechRec = null;
     let recordingState = false;
-
-    function toggleConfig() {
-      const p = document.getElementById('configPanel');
-      p.classList.toggle('hidden');
-    }
-
-    function toggleNewPatient() {
-      const b = document.getElementById('newPatientBox');
-      b.classList.toggle('hidden');
-    }
 
     function initConfig() {
       const url = localStorage.getItem('DOCASSIST_SUPABASE_URL') || '';
@@ -175,7 +165,7 @@
           supabase = window.supabase.createClient(url, key);
           loadPatientsFromDB();
         } catch (e) {
-          console.error("Error supabase:", e);
+          console.error(e);
         }
       }
     }
@@ -185,16 +175,21 @@
       const key = document.getElementById('cfgSupabaseKey').value.trim();
       const gemini = document.getElementById('cfgGeminiKey').value.trim();
 
+      if (!url || !key || !gemini) {
+        alert('Por favor completa las 3 casillas antes de guardar.');
+        return;
+      }
+
       localStorage.setItem('DOCASSIST_SUPABASE_URL', url);
       localStorage.setItem('DOCASSIST_SUPABASE_KEY', key);
       localStorage.setItem('DOCASSIST_GEMINI_KEY', gemini);
 
-      if (url && key && window.supabase) {
+      if (window.supabase) {
         supabase = window.supabase.createClient(url, key);
         loadPatientsFromDB();
       }
-      toggleConfig();
-      alert('¡Configuración guardada correctamente!');
+      alert('¡Conexión guardada con éxito!');
+      document.getElementById('configPanel').classList.add('hidden');
     }
 
     function switchNoteTab(type) {
@@ -260,7 +255,7 @@
 
     async function submitNewPatient() {
       if (!supabase) {
-        alert('Configura primero Supabase en Ajustes.');
+        alert('Guarda primero tus claves en la sección amarilla de arriba.');
         return;
       }
       const bed = document.getElementById('newBed').value.trim();
@@ -278,13 +273,13 @@
       ]).select();
 
       if (error) {
-        alert('Error: ' + error.message);
+        alert('Error al guardar: ' + error.message);
       } else {
         document.getElementById('newBed').value = '';
         document.getElementById('newInitials').value = '';
         document.getElementById('newAge').value = '';
         document.getElementById('newDx').value = '';
-        toggleNewPatient();
+        document.getElementById('newPatientBox').classList.add('hidden');
         loadPatientsFromDB();
         if (data && data[0]) selectPatient(data[0]);
       }
@@ -327,13 +322,13 @@
     async function processWithGemini() {
       const apiKey = localStorage.getItem('DOCASSIST_GEMINI_KEY');
       if (!apiKey) {
-        alert('Por favor ingresa tu API Key de Gemini en Ajustes / Keys.');
-        toggleConfig();
+        alert('Falta tu API Key de Gemini. Ingrésala arriba.');
+        document.getElementById('configPanel').classList.remove('hidden');
         return;
       }
       const rawDraft = document.getElementById('rawNotesInput').value.trim();
       if (!rawDraft) {
-        alert('Escribe notas antes de generar.');
+        alert('Escribe o dicta notas antes de estructurar.');
         return;
       }
 
@@ -363,7 +358,7 @@ No inventes datos que no se mencionaron. Si algo falta, pon [No reportado]. Sé 
         if (d.candidates && d.candidates[0].content.parts[0].text) {
           document.getElementById('finalClinicalNote').value = d.candidates[0].content.parts[0].text;
         } else {
-          alert('Error de respuesta de la IA. Revisa tu API key.');
+          alert('Error de respuesta de Gemini. Verifica la API key.');
         }
       } catch (err) {
         alert('Error: ' + err.message);
@@ -382,7 +377,7 @@ No inventes datos que no se mencionaron. Si algo falta, pon [No reportado]. Sé 
 
     async function saveNoteToDatabase() {
       if (!supabase) {
-        alert('Conecta primero Supabase en Ajustes.');
+        alert('Conecta primero Supabase arriba.');
         return;
       }
       const note = document.getElementById('finalClinicalNote').value.trim();
@@ -399,9 +394,9 @@ No inventes datos que no se mencionaron. Si algo falta, pon [No reportado]. Sé 
       }]);
 
       if (error) {
-        alert('Error al guardar: ' + error.message);
+        alert('Error: ' + error.message);
       } else {
-        alert('¡Nota archivada en Supabase!');
+        alert('¡Nota guardada en Supabase!');
       }
     }
 
