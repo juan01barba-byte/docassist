@@ -4,68 +4,408 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <title>DocAssist - Asistente Clínico</title>
-  
-  <link rel="manifest" href="manifest.json">
-  <meta name="theme-color" content="#4338ca">
-
-  <!-- Tailwind CSS -->
   <script src="https://cdn.tailwindcss.com"></script>
-  <!-- Supabase JS Client oficial -->
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-  <!-- Lucide Icons -->
-  <script src="https://unpkg.com/lucide@latest"></script>
 </head>
-<body class="bg-slate-100 text-slate-800 min-h-screen flex flex-col font-sans antialiased">
+<body class="bg-slate-100 text-slate-800 min-h-screen flex flex-col font-sans">
 
   <!-- Header -->
-  <header class="bg-indigo-700 text-white sticky top-0 z-30 shadow-md">
-    <div class="max-w-6xl mx-auto px-4 py-3 flex items-center justify-between">
-      <div class="flex items-center space-x-2">
-        <i data-lucide="stethoscope" class="w-6 h-6"></i>
-        <h1 class="text-lg font-bold tracking-tight">DocAssist <span class="text-xs bg-indigo-500/80 px-2 py-0.5 rounded-full font-normal">Guardia</span></h1>
-      </div>
-      <button type="button" onclick="openConfigModal()" class="flex items-center gap-1.5 text-xs bg-indigo-800/90 hover:bg-indigo-900 border border-indigo-400 px-3 py-1.5 rounded-lg transition shadow-sm font-semibold active:scale-95">
-        <i data-lucide="key" class="w-3.5 h-3.5"></i>
-        <span>Ajustes / Keys</span>
-      </button>
+  <header class="bg-indigo-700 text-white shadow-md p-4 flex justify-between items-center sticky top-0 z-20">
+    <div class="flex items-center gap-2">
+      <span class="text-2xl">🩺</span>
+      <h1 class="text-lg font-bold">DocAssist <span class="text-xs bg-indigo-500 px-2 py-0.5 rounded-full font-normal">Guardia</span></h1>
     </div>
+    <button type="button" onclick="toggleConfig()" class="bg-amber-400 hover:bg-amber-300 text-indigo-950 font-bold px-3 py-1.5 rounded-lg text-xs shadow transition active:scale-95">
+      ⚙️ Ajustes / Keys
+    </button>
   </header>
 
-  <!-- Layout Principal -->
+  <!-- PANEL DE AJUSTES (Desplegable directo, imposible que falle) -->
+  <div id="configPanel" class="hidden bg-white border-b-2 border-indigo-200 p-4 shadow-md">
+    <div class="max-w-2xl mx-auto space-y-3">
+      <div class="flex justify-between items-center">
+        <h2 class="font-bold text-sm text-slate-700">⚙️ Configuración de Conexiones</h2>
+        <button type="button" onclick="toggleConfig()" class="text-slate-400 font-bold text-sm">✕ Cerrar</button>
+      </div>
+      <div>
+        <label class="block text-xs font-semibold text-slate-600 mb-1">1. Supabase Project URL</label>
+        <input type="text" id="cfgSupabaseUrl" placeholder="https://xyz.supabase.co" class="w-full border p-2 rounded text-xs">
+      </div>
+      <div>
+        <label class="block text-xs font-semibold text-slate-600 mb-1">2. Supabase Anon Key</label>
+        <input type="password" id="cfgSupabaseKey" placeholder="eyJhbGciOi..." class="w-full border p-2 rounded text-xs">
+      </div>
+      <div>
+        <label class="block text-xs font-semibold text-slate-600 mb-1">3. Google Gemini API Key</label>
+        <input type="password" id="cfgGeminiKey" placeholder="AIzaSy..." class="w-full border p-2 rounded text-xs">
+      </div>
+      <div class="flex justify-end pt-2">
+        <button type="button" onclick="saveConfiguration()" class="bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs px-4 py-2 rounded-lg shadow">
+          💾 Guardar Conexión
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Contenedor Principal -->
   <main class="max-w-6xl mx-auto p-4 flex-1 w-full grid grid-cols-1 lg:grid-cols-12 gap-5">
 
     <!-- Censo Lateral (4 cols) -->
-    <aside class="lg:col-span-4 flex flex-col bg-white rounded-xl shadow-sm border border-slate-200 overflow-hidden">
-      <div class="p-3.5 bg-slate-50 border-b border-slate-200 flex items-center justify-between">
+    <aside class="lg:col-span-4 bg-white rounded-xl shadow-sm border border-slate-200 p-4 flex flex-col">
+      <div class="flex justify-between items-center pb-3 border-b border-slate-100 mb-3">
         <div>
-          <h2 class="font-bold text-sm text-slate-700 flex items-center gap-1.5">
-            <i data-lucide="bed" class="w-4 h-4 text-indigo-600"></i> Censo de Camas
-          </h2>
-          <span id="patientCounter" class="text-xs text-slate-500">Cargando censo...</span>
+          <h2 class="font-bold text-sm text-slate-700">🛏️ Censo de Camas</h2>
+          <span id="patientCounter" class="text-xs text-slate-400">Sin conectar</span>
         </div>
-        <button type="button" onclick="openPatientModal()" class="bg-indigo-600 hover:bg-indigo-700 text-white p-1.5 rounded-lg text-xs shadow-sm flex items-center gap-1">
-          <i data-lucide="user-plus" class="w-4 h-4"></i>
+        <button type="button" onclick="toggleNewPatient()" class="bg-indigo-600 text-white font-bold px-2.5 py-1.5 rounded-lg text-xs shadow hover:bg-indigo-700">
+          + Agregar Cama
         </button>
       </div>
 
-      <div id="patientListContainer" class="p-3 overflow-y-auto max-h-[65vh] space-y-2 flex-1">
-        <p class="text-center text-xs text-slate-400 py-8">Configura Supabase en Ajustes para ver las camas.</p>
+      <!-- Formulario para agregar paciente (Desplegable) -->
+      <div id="newPatientBox" class="hidden bg-slate-50 p-3 rounded-lg border border-slate-200 mb-3 space-y-2 text-xs">
+        <input type="text" id="newBed" placeholder="Cama (Ej: 204-A)" class="w-full border p-1.5 rounded bg-white">
+        <input type="text" id="newInitials" placeholder="Iniciales (Ej: J.P.M.)" class="w-full border p-1.5 rounded bg-white">
+        <input type="number" id="newAge" placeholder="Edad" class="w-full border p-1.5 rounded bg-white">
+        <input type="text" id="newDx" placeholder="Diagnóstico de Ingreso" class="w-full border p-1.5 rounded bg-white">
+        <div class="flex justify-end gap-2 pt-1">
+          <button type="button" onclick="toggleNewPatient()" class="text-slate-500 px-2 py-1">Cancelar</button>
+          <button type="button" onclick="submitNewPatient()" class="bg-indigo-600 text-white px-3 py-1 rounded font-bold">Guardar</button>
+        </div>
+      </div>
+
+      <!-- Lista de camas -->
+      <div id="patientListContainer" class="space-y-2 overflow-y-auto max-h-[60vh]">
+        <p class="text-center text-xs text-slate-400 py-6">Configura tus claves en "Ajustes / Keys" arriba para ver pacientes.</p>
       </div>
     </aside>
 
-    <!-- Redactor Clínico con IA (8 cols) -->
-    <section class="lg:col-span-8 flex flex-col space-y-4">
+    <!-- Editor Clínico (8 cols) -->
+    <section class="lg:col-span-8 space-y-4">
 
-      <!-- Ficha del Paciente Seleccionado -->
-      <div id="activePatientBanner" class="bg-white border-l-4 border-indigo-600 rounded-xl p-4 shadow-sm flex items-center justify-between">
+      <!-- Ficha de la Cama Seleccionada -->
+      <div class="bg-white border-l-4 border-indigo-600 rounded-xl p-4 shadow-sm flex justify-between items-center">
         <div>
-          <span class="text-[11px] font-bold text-indigo-600 uppercase tracking-wider">Cama Activa</span>
-          <h3 id="bannerTitle" class="text-base font-bold text-slate-800">Selecciona un paciente del censo</h3>
-          <p id="bannerSub" class="text-xs text-slate-500">Toca una cama a la izquierda para asociar la nota</p>
+          <span class="text-[10px] font-bold text-indigo-600 uppercase">Paciente Activo</span>
+          <h3 id="bannerTitle" class="text-base font-bold text-slate-800">Selecciona una cama</h3>
+          <p id="bannerSub" class="text-xs text-slate-500">Toca una cama a la izquierda para cargar los datos</p>
         </div>
-        <span id="bannerBed" class="px-2.5 py-1 bg-indigo-50 border border-indigo-200 text-indigo-700 text-xs font-bold rounded-md">--</span>
+        <span id="bannerBed" class="px-2.5 py-1 bg-indigo-50 border border-indigo-200 text-indigo-700 text-xs font-bold rounded">--</span>
       </div>
 
-      <!-- Selector de Tipo de Nota -->
-      <div class="grid grid-cols-3 bg-slate-200/80 p-1 rounded-xl text-xs sm:text-sm font-semibold">
-        <button type="button" onclick="switchNoteTab('evolucion')" id="tab-evolucion" class="py-2
+      <!-- Pestañas de tipo de nota -->
+      <div class="grid grid-cols-3 bg-slate-200 p-1 rounded-xl text-xs font-bold">
+        <button type="button" onclick="switchNoteTab('evolucion')" id="tab-evolucion" class="py-2 rounded-lg bg-white text-indigo-700 shadow-sm">Evolución (SOAP)</button>
+        <button type="button" onclick="switchNoteTab('ingreso')" id="tab-ingreso" class="py-2 rounded-lg text-slate-600">Ingreso</button>
+        <button type="button" onclick="switchNoteTab('egreso')" id="tab-egreso" class="py-2 rounded-lg text-slate-600">Egreso (Epicrisis)</button>
+      </div>
+
+      <!-- Borrador / Dictado -->
+      <div class="bg-white rounded-xl shadow-sm border border-slate-200 p-4 space-y-3">
+        <div class="flex justify-between items-center">
+          <label class="text-xs font-bold text-slate-600 uppercase">📝 Datos de la guardia / Dictado</label>
+          <button type="button" id="dictationButton" onclick="toggleDictation()" class="text-xs bg-slate-100 hover:bg-slate-200 border px-2.5 py-1 rounded-md text-slate-700">
+            🎤 <span id="dictationLabel">Dictar</span>
+          </button>
+        </div>
+        <textarea id="rawNotesInput" rows="4" placeholder="Ej: Pte estable, afebril, TA 120/80 FC 75. Abdomen blando indoloro. Laboratorios normales. Continuar tratamiento..." class="w-full text-xs p-3 rounded-lg border bg-slate-50/50"></textarea>
+        <div class="flex justify-end">
+          <button type="button" id="processAiBtn" onclick="processWithGemini()" class="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-lg font-bold text-xs shadow flex items-center gap-1.5">
+            ✨ Estructurar con IA
+          </button>
+        </div>
+      </div>
+
+      <!-- Nota Estructurada -->
+      <div class="bg-white rounded-xl shadow-sm border border-slate-200 p-4 space-y-3">
+        <div class="flex justify-between items-center border-b pb-2">
+          <label class="text-xs font-bold text-slate-600 uppercase">📋 Nota Clínica Formal</label>
+          <div class="flex gap-2">
+            <button type="button" onclick="copyToClipboard()" class="text-xs bg-emerald-50 text-emerald-700 border border-emerald-300 px-3 py-1.5 rounded-lg font-bold">
+              📋 Copiar
+            </button>
+            <button type="button" onclick="saveNoteToDatabase()" class="text-xs bg-indigo-50 text-indigo-700 border border-indigo-300 px-3 py-1.5 rounded-lg font-bold">
+              💾 Guardar
+            </button>
+          </div>
+        </div>
+        <textarea id="finalClinicalNote" rows="8" placeholder="Aquí aparecerá el texto clínico formal..." class="w-full font-mono text-xs p-3 rounded-lg border bg-slate-50/50 text-slate-800"></textarea>
+      </div>
+
+    </section>
+  </main>
+
+  <script>
+    // 1. Matar cualquier Service Worker viejo que esté bloqueando el celular
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.getRegistrations().then(registrations => {
+        for (let registration of registrations) {
+          registration.unregister();
+        }
+      });
+    }
+
+    let supabase = null;
+    let activePatient = null;
+    let currentTab = 'evolucion';
+    let speechRec = null;
+    let recordingState = false;
+
+    function toggleConfig() {
+      const p = document.getElementById('configPanel');
+      p.classList.toggle('hidden');
+    }
+
+    function toggleNewPatient() {
+      const b = document.getElementById('newPatientBox');
+      b.classList.toggle('hidden');
+    }
+
+    function initConfig() {
+      const url = localStorage.getItem('DOCASSIST_SUPABASE_URL') || '';
+      const key = localStorage.getItem('DOCASSIST_SUPABASE_KEY') || '';
+      const gemini = localStorage.getItem('DOCASSIST_GEMINI_KEY') || '';
+
+      document.getElementById('cfgSupabaseUrl').value = url;
+      document.getElementById('cfgSupabaseKey').value = key;
+      document.getElementById('cfgGeminiKey').value = gemini;
+
+      if (url && key && window.supabase) {
+        try {
+          supabase = window.supabase.createClient(url, key);
+          loadPatientsFromDB();
+        } catch (e) {
+          console.error("Error supabase:", e);
+        }
+      }
+    }
+
+    function saveConfiguration() {
+      const url = document.getElementById('cfgSupabaseUrl').value.trim();
+      const key = document.getElementById('cfgSupabaseKey').value.trim();
+      const gemini = document.getElementById('cfgGeminiKey').value.trim();
+
+      localStorage.setItem('DOCASSIST_SUPABASE_URL', url);
+      localStorage.setItem('DOCASSIST_SUPABASE_KEY', key);
+      localStorage.setItem('DOCASSIST_GEMINI_KEY', gemini);
+
+      if (url && key && window.supabase) {
+        supabase = window.supabase.createClient(url, key);
+        loadPatientsFromDB();
+      }
+      toggleConfig();
+      alert('¡Configuración guardada correctamente!');
+    }
+
+    function switchNoteTab(type) {
+      currentTab = type;
+      ['evolucion', 'ingreso', 'egreso'].forEach(t => {
+        const el = document.getElementById(`tab-${t}`);
+        if (t === type) {
+          el.className = 'py-2 rounded-lg bg-white text-indigo-700 shadow-sm font-bold';
+        } else {
+          el.className = 'py-2 rounded-lg text-slate-600 font-medium';
+        }
+      });
+    }
+
+    async function loadPatientsFromDB() {
+      if (!supabase) return;
+      try {
+        const { data, error } = await supabase
+          .from('patients')
+          .select('*')
+          .eq('status', 'Activo')
+          .order('bed_number', { ascending: true });
+
+        const container = document.getElementById('patientListContainer');
+        container.innerHTML = '';
+
+        if (error || !data || data.length === 0) {
+          container.innerHTML = `<p class="text-center text-xs text-slate-400 py-6">No hay pacientes activos en el censo.</p>`;
+          document.getElementById('patientCounter').innerText = '0 pacientes';
+          return;
+        }
+
+        document.getElementById('patientCounter').innerText = `${data.length} pacientes activos`;
+
+        data.forEach(p => {
+          const card = document.createElement('div');
+          const isSelected = activePatient && activePatient.id === p.id;
+          card.className = `p-3 rounded-lg border text-xs cursor-pointer transition ${
+            isSelected ? 'bg-indigo-50 border-indigo-500 shadow-sm' : 'bg-slate-50 border-slate-200 hover:border-slate-300'
+          }`;
+          card.onclick = () => selectPatient(p);
+          card.innerHTML = `
+            <div class="flex justify-between items-center font-bold">
+              <span class="text-indigo-700">${p.bed_number}</span>
+              <span class="bg-slate-200 text-slate-700 px-2 py-0.5 rounded text-[10px]">${p.initials} (${p.age || '--'}a)</span>
+            </div>
+            <p class="text-slate-600 mt-1 line-clamp-1">${p.admission_dx}</p>
+          `;
+          container.appendChild(card);
+        });
+      } catch (err) {
+        console.error(err);
+      }
+    }
+
+    function selectPatient(patient) {
+      activePatient = patient;
+      document.getElementById('bannerTitle').innerText = `${patient.initials} - ${patient.age ? patient.age + ' años' : ''}`;
+      document.getElementById('bannerSub').innerText = `${patient.admission_dx}`;
+      document.getElementById('bannerBed').innerText = patient.bed_number;
+      loadPatientsFromDB();
+    }
+
+    async function submitNewPatient() {
+      if (!supabase) {
+        alert('Configura primero Supabase en Ajustes.');
+        return;
+      }
+      const bed = document.getElementById('newBed').value.trim();
+      const initials = document.getElementById('newInitials').value.trim();
+      const age = parseInt(document.getElementById('newAge').value) || null;
+      const dx = document.getElementById('newDx').value.trim();
+
+      if (!bed || !dx) {
+        alert('Cama y diagnóstico son obligatorios.');
+        return;
+      }
+
+      const { data, error } = await supabase.from('patients').insert([
+        { bed_number: bed, initials: initials || 'N.N.', age: age, admission_dx: dx }
+      ]).select();
+
+      if (error) {
+        alert('Error: ' + error.message);
+      } else {
+        document.getElementById('newBed').value = '';
+        document.getElementById('newInitials').value = '';
+        document.getElementById('newAge').value = '';
+        document.getElementById('newDx').value = '';
+        toggleNewPatient();
+        loadPatientsFromDB();
+        if (data && data[0]) selectPatient(data[0]);
+      }
+    }
+
+    function toggleDictation() {
+      const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+      if (!SpeechRecognition) {
+        alert('Dictado por voz no disponible en este navegador.');
+        return;
+      }
+      if (!speechRec) {
+        speechRec = new SpeechRecognition();
+        speechRec.lang = 'es-ES';
+        speechRec.continuous = true;
+        speechRec.onresult = (e) => {
+          const txt = e.results[e.results.length - 1][0].transcript;
+          const inp = document.getElementById('rawNotesInput');
+          inp.value += (inp.value ? ' ' : '') + txt;
+        };
+        speechRec.onerror = () => stopDictation();
+      }
+      if (recordingState) {
+        stopDictation();
+      } else {
+        speechRec.start();
+        recordingState = true;
+        document.getElementById('dictationLabel').innerText = 'Escuchando...';
+        document.getElementById('dictationButton').classList.add('bg-rose-100', 'text-rose-700');
+      }
+    }
+
+    function stopDictation() {
+      if (speechRec) speechRec.stop();
+      recordingState = false;
+      document.getElementById('dictationLabel').innerText = 'Dictar';
+      document.getElementById('dictationButton').classList.remove('bg-rose-100', 'text-rose-700');
+    }
+
+    async function processWithGemini() {
+      const apiKey = localStorage.getItem('DOCASSIST_GEMINI_KEY');
+      if (!apiKey) {
+        alert('Por favor ingresa tu API Key de Gemini en Ajustes / Keys.');
+        toggleConfig();
+        return;
+      }
+      const rawDraft = document.getElementById('rawNotesInput').value.trim();
+      if (!rawDraft) {
+        alert('Escribe notas antes de generar.');
+        return;
+      }
+
+      const patientCtx = activePatient 
+        ? `Paciente: ${activePatient.initials}, Cama: ${activePatient.bed_number}, Dx: ${activePatient.admission_dx}`
+        : 'Paciente general.';
+
+      const prompt = `Eres asistente médico en redacción clínica formal.
+Paciente: ${patientCtx}
+Borrador de guardia: "${rawDraft}"
+Tipo de nota solicitada: ${currentTab}
+
+Estructura formal requerida en español (SOAP si es evolución, nota de ingreso si es ingreso, epicrisis si es egreso).
+No inventes datos que no se mencionaron. Si algo falta, pon [No reportado]. Sé conciso y médico.`;
+
+      const btn = document.getElementById('processAiBtn');
+      btn.innerText = '⏳ Procesando...';
+      btn.disabled = true;
+
+      try {
+        const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ contents: [{ parts: [{ text: prompt }] }] })
+        });
+        const d = await res.json();
+        if (d.candidates && d.candidates[0].content.parts[0].text) {
+          document.getElementById('finalClinicalNote').value = d.candidates[0].content.parts[0].text;
+        } else {
+          alert('Error de respuesta de la IA. Revisa tu API key.');
+        }
+      } catch (err) {
+        alert('Error: ' + err.message);
+      } finally {
+        btn.innerText = '✨ Estructurar con IA';
+        btn.disabled = false;
+      }
+    }
+
+    function copyToClipboard() {
+      const n = document.getElementById('finalClinicalNote').value;
+      if (!n) return;
+      navigator.clipboard.writeText(n);
+      alert('¡Nota copiada al portapapeles!');
+    }
+
+    async function saveNoteToDatabase() {
+      if (!supabase) {
+        alert('Conecta primero Supabase en Ajustes.');
+        return;
+      }
+      const note = document.getElementById('finalClinicalNote').value.trim();
+      if (!note) {
+        alert('No hay nota para guardar.');
+        return;
+      }
+      const { error } = await supabase.from('clinical_notes').insert([{
+        patient_id: activePatient ? activePatient.id : null,
+        bed_number: activePatient ? activePatient.bed_number : 'General',
+        note_type: currentTab,
+        raw_draft: document.getElementById('rawNotesInput').value,
+        structured_content: note
+      }]);
+
+      if (error) {
+        alert('Error al guardar: ' + error.message);
+      } else {
+        alert('¡Nota archivada en Supabase!');
+      }
+    }
+
+    window.addEventListener('DOMContentLoaded', initConfig);
+  </script>
+</body>
+</html>
