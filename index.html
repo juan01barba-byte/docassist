@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <title>DocAssist - Asistente Clínico</title>
   <script src="https://cdn.tailwindcss.com"></script>
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
 </head>
 <body class="bg-slate-100 text-slate-800 min-h-screen flex flex-col font-sans">
 
@@ -20,12 +20,12 @@
     </button>
   </header>
 
-  <!-- PANEL DE LLAVES: ABIERTO POR DEFECTO PARA QUE LO VEAS DE INMEDIATO -->
+  <!-- PANEL DE LLAVES: ABIERTO POR DEFECTO -->
   <div id="configPanel" class="bg-amber-50 border-b-2 border-amber-300 p-4 shadow-sm">
     <div class="max-w-3xl mx-auto space-y-3">
       <div class="flex justify-between items-center">
-        <h2 class="font-bold text-sm text-amber-900 flex items-center gap-1.5">
-          🔑 Configuración de Llaves (Pega tus datos aquí)
+        <h2 class="font-bold text-sm text-amber-900">
+          🔑 Configuración de Llaves
         </h2>
         <span class="text-[11px] text-amber-700">Se guarda en tu navegador</span>
       </div>
@@ -44,7 +44,7 @@
         </div>
       </div>
       <div class="flex justify-end gap-2 pt-1">
-        <button type="button" onclick="saveConfiguration()" class="bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs px-4 py-2 rounded-lg shadow">
+        <button type="button" id="btnSaveConfig" onclick="saveConfiguration()" class="bg-indigo-600 hover:bg-indigo-700 text-white font-bold text-xs px-5 py-2.5 rounded-lg shadow active:scale-95 transition">
           💾 Guardar y Conectar
         </button>
       </div>
@@ -140,56 +140,74 @@
   </main>
 
   <script>
-    // Desactivar service workers viejos
+    // Limpieza de cualquier Service Worker que interfiera
     if ('serviceWorker' in navigator) {
       navigator.serviceWorker.getRegistrations().then(r => r.forEach(reg => reg.unregister()));
     }
 
-    let supabase = null;
+    let supabaseClient = null;
     let activePatient = null;
     let currentTab = 'evolucion';
     let speechRec = null;
     let recordingState = false;
 
+    // Función para obtener la instancia de Supabase de forma segura
+    function getSupabaseInstance(url, key) {
+      const sbObj = window.supabase || window.supabaseClient;
+      if (sbObj && typeof sbObj.createClient === 'function') {
+        return sbObj.createClient(url, key);
+      }
+      return null;
+    }
+
     function initConfig() {
-      const url = localStorage.getItem('DOCASSIST_SUPABASE_URL') || '';
-      const key = localStorage.getItem('DOCASSIST_SUPABASE_KEY') || '';
-      const gemini = localStorage.getItem('DOCASSIST_GEMINI_KEY') || '';
+      try {
+        const url = (localStorage.getItem('DOCASSIST_SUPABASE_URL') || '').trim();
+        const key = (localStorage.getItem('DOCASSIST_SUPABASE_KEY') || '').trim();
+        const gemini = (localStorage.getItem('DOCASSIST_GEMINI_KEY') || '').trim();
 
-      document.getElementById('cfgSupabaseUrl').value = url;
-      document.getElementById('cfgSupabaseKey').value = key;
-      document.getElementById('cfgGeminiKey').value = gemini;
+        if (document.getElementById('cfgSupabaseUrl')) document.getElementById('cfgSupabaseUrl').value = url;
+        if (document.getElementById('cfgSupabaseKey')) document.getElementById('cfgSupabaseKey').value = key;
+        if (document.getElementById('cfgGeminiKey')) document.getElementById('cfgGeminiKey').value = gemini;
 
-      if (url && key && window.supabase) {
-        try {
-          supabase = window.supabase.createClient(url, key);
+        if (url && key) {
+          supabaseClient = getSupabaseInstance(url, key);
           loadPatientsFromDB();
-        } catch (e) {
-          console.error(e);
         }
+      } catch (err) {
+        console.warn("Init warning:", err);
       }
     }
 
     function saveConfiguration() {
-      const url = document.getElementById('cfgSupabaseUrl').value.trim();
-      const key = document.getElementById('cfgSupabaseKey').value.trim();
-      const gemini = document.getElementById('cfgGeminiKey').value.trim();
+      try {
+        let url = (document.getElementById('cfgSupabaseUrl').value || '').trim();
+        const key = (document.getElementById('cfgSupabaseKey').value || '').trim();
+        const gemini = (document.getElementById('cfgGeminiKey').value || '').trim();
 
-      if (!url || !key || !gemini) {
-        alert('Por favor completa las 3 casillas antes de guardar.');
-        return;
-      }
+        if (!url || !key || !gemini) {
+          alert('⚠️ Falta información: Por favor llena las 3 casillas antes de guardar.');
+          return;
+        }
 
-      localStorage.setItem('DOCASSIST_SUPABASE_URL', url);
-      localStorage.setItem('DOCASSIST_SUPABASE_KEY', key);
-      localStorage.setItem('DOCASSIST_GEMINI_KEY', gemini);
+        // Quitar barra final de la URL si se pegó por error
+        if (url.endsWith('/')) {
+          url = url.slice(0, -1);
+          document.getElementById('cfgSupabaseUrl').value = url;
+        }
 
-      if (window.supabase) {
-        supabase = window.supabase.createClient(url, key);
+        localStorage.setItem('DOCASSIST_SUPABASE_URL', url);
+        localStorage.setItem('DOCASSIST_SUPABASE_KEY', key);
+        localStorage.setItem('DOCASSIST_GEMINI_KEY', gemini);
+
+        supabaseClient = getSupabaseInstance(url, key);
+
+        alert('✅ ¡Datos guardados correctamente!');
+        document.getElementById('configPanel').classList.add('hidden');
         loadPatientsFromDB();
+      } catch (e) {
+        alert('❌ Error al guardar: ' + e.message);
       }
-      alert('¡Conexión guardada con éxito!');
-      document.getElementById('configPanel').classList.add('hidden');
     }
 
     function switchNoteTab(type) {
@@ -204,20 +222,47 @@
       });
     }
 
+    // Consulta directa de pacientes compatible con librería o fetch nativo
     async function loadPatientsFromDB() {
-      if (!supabase) return;
+      const url = (localStorage.getItem('DOCASSIST_SUPABASE_URL') || '').trim();
+      const key = (localStorage.getItem('DOCASSIST_SUPABASE_KEY') || '').trim();
+      const container = document.getElementById('patientListContainer');
+
+      if (!url || !key) {
+        container.innerHTML = `<p class="text-center text-xs text-slate-400 py-6">Configura tus llaves arriba y dale a "Guardar y Conectar".</p>`;
+        document.getElementById('patientCounter').innerText = 'Sin conectar';
+        return;
+      }
+
+      container.innerHTML = `<p class="text-center text-xs text-indigo-500 py-6">Conectando con Supabase...</p>`;
+
       try {
-        const { data, error } = await supabase
-          .from('patients')
-          .select('*')
-          .eq('status', 'Activo')
-          .order('bed_number', { ascending: true });
+        let data = null;
 
-        const container = document.getElementById('patientListContainer');
+        // Intentar con el cliente de Supabase
+        if (supabaseClient) {
+          const res = await supabaseClient.from('patients').select('*').eq('status', 'Activo').order('bed_number', { ascending: true });
+          if (!res.error) data = res.data;
+        }
+
+        // Fallback: Si la librería no cargó, usar fetch directo a la REST API de Supabase
+        if (!data) {
+          const fetchRes = await fetch(`${url}/rest/v1/patients?status=eq.Activo&order=bed_number.asc`, {
+            headers: {
+              'apikey': key,
+              'Authorization': `Bearer ${key}`
+            }
+          });
+          if (fetchRes.ok) {
+            data = await fetchRes.json();
+          } else {
+            throw new Error(`Código de respuesta HTTP ${fetchRes.status}`);
+          }
+        }
+
         container.innerHTML = '';
-
-        if (error || !data || data.length === 0) {
-          container.innerHTML = `<p class="text-center text-xs text-slate-400 py-6">No hay pacientes activos en el censo.</p>`;
+        if (!data || data.length === 0) {
+          container.innerHTML = `<p class="text-center text-xs text-slate-400 py-6">0 pacientes activos. Usa "+ Agregar Cama" para crear el primero.</p>`;
           document.getElementById('patientCounter').innerText = '0 pacientes';
           return;
         }
@@ -241,7 +286,8 @@
           container.appendChild(card);
         });
       } catch (err) {
-        console.error(err);
+        container.innerHTML = `<p class="text-center text-xs text-rose-500 py-6">Error de conexión: ${err.message}. Revisa la URL y Anon Key.</p>`;
+        document.getElementById('patientCounter').innerText = 'Error';
       }
     }
 
@@ -254,10 +300,14 @@
     }
 
     async function submitNewPatient() {
-      if (!supabase) {
-        alert('Guarda primero tus claves en la sección amarilla de arriba.');
+      const url = (localStorage.getItem('DOCASSIST_SUPABASE_URL') || '').trim();
+      const key = (localStorage.getItem('DOCASSIST_SUPABASE_KEY') || '').trim();
+
+      if (!url || !key) {
+        alert('Configura primero Supabase arriba.');
         return;
       }
+
       const bed = document.getElementById('newBed').value.trim();
       const initials = document.getElementById('newInitials').value.trim();
       const age = parseInt(document.getElementById('newAge').value) || null;
@@ -268,20 +318,34 @@
         return;
       }
 
-      const { data, error } = await supabase.from('patients').insert([
-        { bed_number: bed, initials: initials || 'N.N.', age: age, admission_dx: dx }
-      ]).select();
+      try {
+        const payload = [{ bed_number: bed, initials: initials || 'N.N.', age: age, admission_dx: dx }];
 
-      if (error) {
-        alert('Error al guardar: ' + error.message);
-      } else {
+        if (supabaseClient) {
+          const { error } = await supabaseClient.from('patients').insert(payload);
+          if (error) throw error;
+        } else {
+          const res = await fetch(`${url}/rest/v1/patients`, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'apikey': key,
+              'Authorization': `Bearer ${key}`,
+              'Prefer': 'return=representation'
+            },
+            body: JSON.stringify(payload)
+          });
+          if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        }
+
         document.getElementById('newBed').value = '';
         document.getElementById('newInitials').value = '';
         document.getElementById('newAge').value = '';
         document.getElementById('newDx').value = '';
         document.getElementById('newPatientBox').classList.add('hidden');
         loadPatientsFromDB();
-        if (data && data[0]) selectPatient(data[0]);
+      } catch (err) {
+        alert('Error al guardar en Supabase: ' + err.message);
       }
     }
 
@@ -320,7 +384,7 @@
     }
 
     async function processWithGemini() {
-      const apiKey = localStorage.getItem('DOCASSIST_GEMINI_KEY');
+      const apiKey = (localStorage.getItem('DOCASSIST_GEMINI_KEY') || '').trim();
       if (!apiKey) {
         alert('Falta tu API Key de Gemini. Ingrésala arriba.');
         document.getElementById('configPanel').classList.remove('hidden');
@@ -328,7 +392,7 @@
       }
       const rawDraft = document.getElementById('rawNotesInput').value.trim();
       if (!rawDraft) {
-        alert('Escribe o dicta notas antes de estructurar.');
+        alert('Escribe notas antes de estructurar.');
         return;
       }
 
@@ -358,7 +422,7 @@ No inventes datos que no se mencionaron. Si algo falta, pon [No reportado]. Sé 
         if (d.candidates && d.candidates[0].content.parts[0].text) {
           document.getElementById('finalClinicalNote').value = d.candidates[0].content.parts[0].text;
         } else {
-          alert('Error de respuesta de Gemini. Verifica la API key.');
+          alert('Error de respuesta de Gemini. Revisa la clave.');
         }
       } catch (err) {
         alert('Error: ' + err.message);
@@ -376,27 +440,46 @@ No inventes datos que no se mencionaron. Si algo falta, pon [No reportado]. Sé 
     }
 
     async function saveNoteToDatabase() {
-      if (!supabase) {
+      const url = (localStorage.getItem('DOCASSIST_SUPABASE_URL') || '').trim();
+      const key = (localStorage.getItem('DOCASSIST_SUPABASE_KEY') || '').trim();
+      const note = document.getElementById('finalClinicalNote').value.trim();
+
+      if (!url || !key) {
         alert('Conecta primero Supabase arriba.');
         return;
       }
-      const note = document.getElementById('finalClinicalNote').value.trim();
       if (!note) {
         alert('No hay nota para guardar.');
         return;
       }
-      const { error } = await supabase.from('clinical_notes').insert([{
+
+      const payload = [{
         patient_id: activePatient ? activePatient.id : null,
         bed_number: activePatient ? activePatient.bed_number : 'General',
         note_type: currentTab,
         raw_draft: document.getElementById('rawNotesInput').value,
         structured_content: note
-      }]);
+      }];
 
-      if (error) {
-        alert('Error: ' + error.message);
-      } else {
-        alert('¡Nota guardada en Supabase!');
+      try {
+        if (supabaseClient) {
+          const { error } = await supabaseClient.from('clinical_notes').insert(payload);
+          if (error) throw error;
+        } else {
+          const res = await fetch(`${url}/rest/v1/clinical_notes`, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'apikey': key,
+              'Authorization': `Bearer ${key}`
+            },
+            body: JSON.stringify(payload)
+          });
+          if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        }
+        alert('¡Nota guardada en Supabase con éxito!');
+      } catch (err) {
+        alert('Error al guardar la nota: ' + err.message);
       }
     }
 
